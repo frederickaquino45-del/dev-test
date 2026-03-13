@@ -1,10 +1,11 @@
 ﻿using Application.Client.Commands.CreateClient;
 using Application.Client.Queries.AllClientsQuery;
+using Application.Client.Queries.ClientByDocumentoQuery;
 using Application.Client.Queries.ClientByIdQuery;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -33,10 +34,16 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<AllClientsQueryResponse>), StatusCodes.Status200OK)]
-        public async Task<IActionResult> ListAll()
+        public async Task<IActionResult> Get([FromQuery] string? document)
         {
-            var response = await _mediator.Send(new AllClientsQueryRequest());
-            return Ok(response);
+            if (!string.IsNullOrWhiteSpace(document))
+            {
+                var response = await _mediator.Send(new ClientByDocumentQueryRequest(document));
+                return Ok(response);
+            }
+
+            var result = await _mediator.Send(new AllClientsQueryRequest());
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
