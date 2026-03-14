@@ -33,7 +33,7 @@ interface DataTableProps<T extends {}, TFilter> {
     query: (filters: GlobalFilterType[], signal?: AbortSignal) => Promise<T[]>,
     createRouterLink?: string
     hover?: boolean,
-    filters?: TextFormFieldProps<TFilter>[];
+    filters?: (TextFormFieldProps<TFilter> & { commitOnBlur?: boolean })[];
     summary?: ReactNode;
     reloadButton?: boolean,
     autoReloadTimerInSeconds?: number,
@@ -70,6 +70,7 @@ const IndeterminateCheckbox = React.forwardRef(
 export default function DataTable<T extends {}, TFilter extends BaseFilter>(props: DataTableProps<T, TFilter>) {
     const [searchParams, setSearchParams] = useSearchParams();
     const [globalFilters, setGlobalFilters] = useState<GlobalFilterType[]>(searchParams.size > 0 ? [...searchParams.entries()].filter(item => item[1]).map(([name, value]) => ({ name, value })) : []);
+    const [pendingFilterValues, setPendingFilterValues] = useState<Record<string, unknown>>({});
 
     const [exportLoading, setExportLoading] = useState<boolean>(false);
     const navigate = useNavigate();
@@ -186,20 +187,45 @@ export default function DataTable<T extends {}, TFilter extends BaseFilter>(prop
                         {props.filters
                             .filter(item => item.renderIf !== false)
                             .map((filter, key) => {
+                                const { commitOnBlur, ...filterProps } = filter as TextFormFieldProps<TFilter> & { commitOnBlur?: boolean };
+                                const filterName = filter.name.toString();
+                                const committedValue = globalFilters.find(f => f.name === filter.name)?.value;
+                                const displayValue = commitOnBlur && filterName in pendingFilterValues
+                                    ? pendingFilterValues[filterName]
+                                    : committedValue;
+                                const textFieldProps = {
+                                    ...filterProps,
+                                    defaultValue: searchParams.get(filterName) ?? filter.defaultValue,
+                                    value: (displayValue as any) ?? "",
+                                    handleChange: (event: any) => {
+                                        const name = event.hasOwnProperty("target") ? event.target.name : event.name;
+                                        const value = event.hasOwnProperty("target") ? event.target.value : event.value;
+                                        if (commitOnBlur) {
+                                            setPendingFilterValues(prev => ({ ...prev, [name]: value }));
+                                        } else {
+                                            handleChangeGlobalFilter(name, value);
+                                        }
+                                    },
+                                    ...(commitOnBlur
+                                        ? {
+                                            onBlur: () => {
+                                                const value = filterName in pendingFilterValues ? pendingFilterValues[filterName] : committedValue;
+                                                handleChangeGlobalFilter(filterName, value ?? "");
+                                                setPendingFilterValues(prev => {
+                                                    const next = { ...prev };
+                                                    delete next[filterName];
+                                                    return next;
+                                                });
+                                            },
+                                        }
+                                        : "onBlur" in filterProps && filterProps.onBlur
+                                            ? { onBlur: filterProps.onBlur }
+                                            : {}),
+                                } as TextFormFieldProps<TFilter>;
                                 return (
                                     <Col md={3} key={key}>
-                                        <TextFormField
-                                            {...filter}
-                                            defaultValue={searchParams.get(filter.name.toString()) ?? filter.defaultValue}
-                                            value={globalFilters.find(f => f.name === filter.name)?.value as any ?? null}
-                                            handleChange={(event) => {
-                                                if (event.hasOwnProperty("target")) {
-                                                    handleChangeGlobalFilter(event.target.name, event.target.value)
-                                                }
-                                                else {
-                                                    handleChangeGlobalFilter(event.name, event.value)
-                                                }
-                                            }}
+                                        <TextFormField<TFilter>
+                                            {...textFieldProps}
                                         />
                                     </Col>
                                 )
@@ -241,6 +267,7 @@ export default function DataTable<T extends {}, TFilter extends BaseFilter>(prop
                         }} disabled={exportLoading} >{exportLoading ? "Exportando..." : props.exportButtonText ?? "Exportar"} </Button>}
                         {props.cleanButton && <Button variant="secondary" onClick={() => {
                             setGlobalFilters([]);
+                            setPendingFilterValues({});
                             setSearchParams("");
                             if (props.cleanFn)
                                 props.cleanFn();

@@ -2,15 +2,15 @@ import React, { Suspense, useEffect, useState } from "react";
 import { Button, Card, Row } from "react-bootstrap";
 import { NAVIGATION_PATH } from "@/constants";
 import { Client } from "@/types/api/Client";
+import { ClientFilter } from "@/types/api/filters/ClientFilter";
 import DataTable, { DataTableType } from "@/components/DataTable";
-import { ActionItemType, CrudActions } from "@/components/CrudActions";
-import { Link, useNavigate } from "react-router-dom";
-import { mountRoute } from "@/utils/mountRoute";
+import { Link } from "react-router-dom";
 import Loader from "@/components/Loader";
 import ClientService from "@/services/ClientService";
+import { TextFormFieldType } from "@/components/form/TextFormField/TextFormFieldType";
+import { format } from "@/helpers/format";
 
 const ClientListing = () => {
-    const navigate = useNavigate();
     const [date, setDate] = useState<Date>();
 
     useEffect(() => {
@@ -31,10 +31,9 @@ const ClientListing = () => {
                 </Card.Title>
             </Card.Header>
             <Suspense fallback={<><Loader /><br /><br /></>}>
-                <DataTable<Client, any>
+                <DataTable<Client, ClientFilter>
                     thin
                     columns={[
-                        
                         { Header: "Nome", accessor: "firstName" },
                         { Header: "Sobrenome", accessor: "lastName" },
                         { Header: "Email", accessor: "email" },
@@ -42,11 +41,22 @@ const ClientListing = () => {
                         { Header: "Documento", accessor: "documentNumber" },
                     ]}
                     query={async (filters) => {
-                        return await ClientService.getAll();
+                        const documentValue = filters.find((f) => f.name === "document")?.value as string | undefined;
+                        const document = documentValue ? format.unmask(documentValue) : undefined;
+                        return await ClientService.getAll(document);
                     }}
                     fetchButton
                     cleanButton
-                    filters={[]}
+                    filters={[
+                        {
+                            name: "document" as keyof ClientFilter,
+                            label: "Documento",
+                            componentType: TextFormFieldType.INPUT,
+                            mask: "###.###.###-##",
+                            placeholder: "000.000.000-00",
+                            commitOnBlur: true,
+                        },
+                    ]}
                     queryName={["client", "listing", date]}
                 />
             </Suspense>

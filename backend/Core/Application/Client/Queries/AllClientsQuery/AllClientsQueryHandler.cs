@@ -20,7 +20,12 @@ namespace Application.Client.Queries.AllClientsQuery
 
         public async Task<IEnumerable<AllClientsQueryResponse>> Handle(AllClientsQueryRequest request, CancellationToken cancellationToken)
         {
-            var clients = await _context.Clients
+            var query = _context.Clients.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(request.Document))
+                query = query.Where(x => x.DocumentNumber == request.Document);
+            
+            var clients = await query
                 .Select(x => new AllClientsQueryResponse
                 {
                     Id = x.Id,
@@ -43,8 +48,7 @@ namespace Application.Client.Queries.AllClientsQuery
                 })
                 .OrderBy(x => x.FirstName)
                 .ThenBy(x => x.LastName)
-
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             return clients;
         }

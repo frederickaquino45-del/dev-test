@@ -6,8 +6,8 @@ class ClientService extends BaseService {
     super("client");
   }
 
-  async getAll(): Promise<Client[]> {
-    return await this.get<Client[]>("");
+  async getAll(document?: string): Promise<Client[]> {
+    return await this.get<Client[]>("", document ? { document } : undefined);
   }
 
   async create(client: Client): Promise<string> {

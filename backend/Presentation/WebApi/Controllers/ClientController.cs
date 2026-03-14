@@ -1,6 +1,6 @@
-﻿using Application.Client.Commands.CreateClient;
+using Application.Client.Commands.CreateClient;
+using Application.Client.Commands.UpdateClient;
 using Application.Client.Queries.AllClientsQuery;
-using Application.Client.Queries.ClientByDocumentoQuery;
 using Application.Client.Queries.ClientByIdQuery;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -36,13 +36,7 @@ namespace WebApi.Controllers
         [ProducesResponseType(typeof(IEnumerable<AllClientsQueryResponse>), StatusCodes.Status200OK)]
         public async Task<IActionResult> Get([FromQuery] string? document)
         {
-            if (!string.IsNullOrWhiteSpace(document))
-            {
-                var response = await _mediator.Send(new ClientByDocumentQueryRequest(document));
-                return Ok(response);
-            }
-
-            var result = await _mediator.Send(new AllClientsQueryRequest());
+            var result = await _mediator.Send(new AllClientsQueryRequest(document));
             return Ok(result);
         }
 
