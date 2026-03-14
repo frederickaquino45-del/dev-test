@@ -41,6 +41,7 @@ namespace Application.Client.Commands.UpdateClient
             client.Update(
                 request.FirstName,
                 request.LastName,
+                request.BirthDate,
                 request.PhoneNumber,
                 request.Email,
                 request.DocumentNumber,

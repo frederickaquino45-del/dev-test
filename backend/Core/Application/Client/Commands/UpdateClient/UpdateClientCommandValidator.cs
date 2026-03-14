@@ -14,6 +14,10 @@ namespace Application.Client.Commands.UpdateClient
                .NotEmpty()
                .WithMessage((obj, propertyValue) => $"LastName obrigatório");
 
+            RuleFor(x => x.BirthDate)
+               .NotEmpty()
+               .WithMessage((obj, propertyValue) => $"BirthDate obrigatório");
+
             RuleFor(x => x.PhoneNumber)
                .NotEmpty()
                .WithMessage((obj, propertyValue) => $"PhoneNumber obrigatório");

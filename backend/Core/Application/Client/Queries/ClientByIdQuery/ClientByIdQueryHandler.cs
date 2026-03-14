@@ -27,6 +27,7 @@ namespace Application.Client.Queries.ClientByIdQuery
                     CreatedAt = x.CreatedAt,
                     FirstName = x.FirstName,
                     LastName = x.LastName,
+                    BirthDate = x.BirthDate,
                     Email = x.Email,
                     PhoneNumber = x.PhoneNumber,
                     DocumentNumber = x.DocumentNumber,

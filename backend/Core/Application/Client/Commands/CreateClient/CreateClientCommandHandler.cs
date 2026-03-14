@@ -22,6 +22,7 @@ namespace Application.Client.Commands.CreateClient
             var client = new Domain.Client(
                 request.FirstName,
                 request.LastName,
+                request.BirthDate,
                 request.PhoneNumber,
                 request.Email,
                 request.DocumentNumber,

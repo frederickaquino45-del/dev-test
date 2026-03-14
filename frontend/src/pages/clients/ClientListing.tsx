@@ -41,6 +41,11 @@ const ClientListing = () => {
                         { Header: "Telefone", accessor: "phoneNumber" },
                         { Header: "Documento", accessor: "documentNumber" },
                         {
+                            Header: "Data de nascimento",
+                            accessor: "birthDate",
+                            Cell: ({ value }) => format.toBirthDateDisplay(value),
+                        },
+                        {
                             Header: "Ações",
                             id: "actions",
                             Cell: ({ row }) => (

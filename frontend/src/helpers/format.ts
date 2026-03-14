@@ -1,8 +1,24 @@
 import accounting from "accounting";
+import moment from "moment";
 
 const intl = new Intl.NumberFormat();
 
 export const format = {
+    toBirthDateDisplay: (value: string | null | undefined): string => {
+        if (value == null || typeof value !== "string") return "";
+        const trimmed = value.trim();
+        if (!trimmed) return "";
+        const m = moment(trimmed, [moment.ISO_8601, "YYYY-MM-DD", "DD/MM/YYYY"], true);
+        return m.isValid() ? m.format("DD/MM/YYYY") : trimmed;
+    },
+    /** Converte data do formulário (dd/MM/yyyy) para ISO (YYYY-MM-DD) para envio à API. */
+    toBirthDateApi: (value: string | null | undefined): string | undefined => {
+        if (value == null || typeof value !== "string") return undefined;
+        const trimmed = value.trim().slice(0, 10);
+        if (!trimmed) return undefined;
+        const m = moment(trimmed, ["DD/MM/YYYY", moment.ISO_8601, "YYYY-MM-DD"], true);
+        return m.isValid() ? m.format("YYYY-MM-DD") : trimmed;
+    },
     toCurrency: (value: number) => accounting.formatMoney(value, 'R$ ', 2, '.', ','),
     currencyToNumber: (value: string) => {
         const cleanedCurrency = value.replace(/[R$\s]/g, '');

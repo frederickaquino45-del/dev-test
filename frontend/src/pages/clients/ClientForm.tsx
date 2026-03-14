@@ -14,10 +14,12 @@ import yup from "@/utils/yup";
 import React, { Suspense } from "react";
 import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import { Formik } from "formik";
+import { format } from "@/helpers/format";
 
 const INITIAL_VALUES: Client = {
   firstName: "",
   lastName: "",
+  birthDate: "",
   phoneNumber: "",
   email: "",
   documentNumber: "",
@@ -35,6 +37,7 @@ const INITIAL_VALUES: Client = {
 const schemaValidation = yup.object().shape({
   firstName: yup.string().required("Nome é obrigatório"),
   lastName: yup.string().required("Sobrenome é obrigatório"),
+  birthDate: yup.string().required("Data de nascimento é obrigatória"),
   phoneNumber: yup.string().required("Telefone é obrigatório"),
   email: yup.string().email("Email inválido").required("Email é obrigatório"),
   documentNumber: yup.string().required("Documento é obrigatório"),
@@ -56,16 +59,25 @@ const ClientForm = () => {
     queryKey: [ReactQueryKeys.CLIENT, id],
     meta: {
       fetchFn: async () => {
-        if (id) return await ClientService.getById(id);
-        return INITIAL_VALUES;
+        const client = id ? await ClientService.getById(id) : { ...INITIAL_VALUES };
+        const normalized = {
+          ...INITIAL_VALUES,
+          ...client,
+          address: { ...INITIAL_VALUES.address, ...client?.address },
+          birthDate: client?.birthDate,
+        };
+        return normalized;
       },
     },
   });
 
   async function onSubmit(values: Client) {
     try {
+      const birthDate = format.toBirthDateApi(values.birthDate) ?? values.birthDate ?? "";
       const clientToSave: Client = {
         ...values,
+        birthDate,
+        documentNumber: values.documentNumber.replace(/\D/g, ''),
         phoneNumber: values.phoneNumber.replace(/\D/g, ''),
         address: {
           ...values.address,
@@ -174,11 +186,25 @@ const ClientForm = () => {
                         name="documentNumber"
                         label="Documento"
                         required
-                        placeholder="Documento"
+                        placeholder="000.000.000-00"
+                        mask="###.###.###-##"
                         handleBlur={handleBlur}
                         handleChange={handleChange}
                         value={values.documentNumber}
                         formikError={errors.documentNumber}
+                      />
+                    </Col>
+                    <Col md={4}>
+                      <TextFormField
+                        componentType={TextFormFieldType.DATE_PICKER}
+                        name="birthDate"
+                        label="Data de nascimento"
+                        required
+                        placeholderText="Data de nascimento"
+                        handleBlur={handleBlur}
+                        handleChange={handleChange}
+                        value={format.toBirthDateDisplay(values.birthDate)}
+                        formikError={errors.birthDate}
                       />
                     </Col>
                   </Row>

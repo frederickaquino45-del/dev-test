@@ -11,6 +11,7 @@ namespace Persistence.Configurations
             builder.ToTable(nameof(Client));
             builder.Property(b => b.FirstName).IsRequired().HasColumnType("varchar(100)");
             builder.Property(b => b.LastName).IsRequired().HasColumnType("varchar(100)");
+            builder.Property(b => b.BirthDate).IsRequired().HasColumnType("date");
             builder.Property(b => b.PhoneNumber).IsRequired().HasColumnType("varchar(15)");
             builder.Property(b => b.DocumentNumber).IsRequired().HasColumnType("varchar(20)");
             builder.Property(b => b.Email).IsRequired().HasColumnType("varchar(255)");
