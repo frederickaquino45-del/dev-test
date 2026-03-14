@@ -48,5 +48,14 @@ namespace WebApi.Controllers
 
             return Ok(response);
         }
+
+        [HttpPut("{id}")]
+        [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+        public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] UpdateClientCommandRequest request)
+        {
+            request.Id = id;
+            var response = await _mediator.Send(request);
+            return Ok(response);
+        }
     }
 }

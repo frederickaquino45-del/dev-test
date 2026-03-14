@@ -5,6 +5,7 @@ import { Client } from "@/types/api/Client";
 import { ClientFilter } from "@/types/api/filters/ClientFilter";
 import DataTable, { DataTableType } from "@/components/DataTable";
 import { Link } from "react-router-dom";
+import { HiOutlinePencilAlt } from "react-icons/hi";
 import Loader from "@/components/Loader";
 import ClientService from "@/services/ClientService";
 import { TextFormFieldType } from "@/components/form/TextFormField/TextFormFieldType";
@@ -39,6 +40,22 @@ const ClientListing = () => {
                         { Header: "Email", accessor: "email" },
                         { Header: "Telefone", accessor: "phoneNumber" },
                         { Header: "Documento", accessor: "documentNumber" },
+                        {
+                            Header: "Ações",
+                            id: "actions",
+                            Cell: ({ row }) => (
+                                row.original.id
+                                    ? (
+                                        <Link
+                                            to={`${NAVIGATION_PATH.CLIENTS.EDIT.ABSOLUTE}/${row.original.id}`}
+                                            title="editar"
+                                        >
+                                            <HiOutlinePencilAlt size={18} />
+                                        </Link>
+                                    )
+                                    : null
+                            ),
+                        },
                     ]}
                     query={async (filters) => {
                         const documentValue = filters.find((f) => f.name === "document")?.value as string | undefined;

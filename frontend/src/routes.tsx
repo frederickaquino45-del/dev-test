@@ -37,7 +37,7 @@ export const routes = createBrowserRouter([
         children: [
             { path: NAVIGATION_PATH.CLIENTS.LISTING.RELATIVE, Component: lazy(() => import("@/pages/clients/ClientListing")) },
             { path: NAVIGATION_PATH.CLIENTS.CREATE.RELATIVE, Component: lazy(() => import("@/pages/clients/ClientForm")) },
-            
+            { path: NAVIGATION_PATH.CLIENTS.EDIT.RELATIVE, Component: lazy(() => import("@/pages/clients/ClientForm")) },
         ]
     },
     {
