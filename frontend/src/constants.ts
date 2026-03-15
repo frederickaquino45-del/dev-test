@@ -30,7 +30,22 @@ export const NAVIGATION_PATH = {
             RELATIVE: "editar/:id",
             ABSOLUTE: "/clientes/editar"
         },
-    }
+    },
+    USERS: {
+        ROOT: "usuarios",
+        LISTING: {
+            RELATIVE: "listagem",
+            ABSOLUTE: "/usuarios/listagem"
+        },
+        CREATE: {
+            RELATIVE: "criar",
+            ABSOLUTE: "/usuarios/criar"
+        },
+        EDIT: {
+            RELATIVE: "editar/:id",
+            ABSOLUTE: "/usuarios/editar"
+        },
+    },
 }
 
 

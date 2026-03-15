@@ -6,4 +6,4 @@ export type User = {
     username: string,
     password?: string,
     profile: UserProfile;
-} & BaseEntity;
+} & Partial<BaseEntity>;
