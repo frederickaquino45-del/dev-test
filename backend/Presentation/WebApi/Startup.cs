@@ -1,16 +1,18 @@
 using Application;
+using Application.Import.Queue;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Persistence;
+using System.Text;
 using WebApi.Extensions;
 using WebApi.Middlewares;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using Microsoft.Extensions.Configuration;
+using WebApi.Services;
 
 namespace WebApi
 {
@@ -43,6 +45,9 @@ namespace WebApi
             services.AddApplication();
             services.AddControllers();
             services.AddPersistence();
+
+            services.AddSingleton<IClientImportQueue, ClientImportQueue>();
+            services.AddHostedService<ClientImportBackgroundService>();
 
             services.AddAuthentication(options =>
             {

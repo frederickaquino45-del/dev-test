@@ -1,7 +1,9 @@
-﻿using Application.Common.Interfaces;
+using Application.Common.Interfaces;
+using Application.Import.Store;
 using Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Persistence.Services;
 using System;
 
 namespace Persistence
@@ -25,6 +27,7 @@ namespace Persistence
             );
 
             services.AddScoped<IClientControlContext, ClientControlContext>();
+            services.AddScoped<IClientImportJobStatusStore, ClientImportJobStatusStore>();
 
             return services;
         }

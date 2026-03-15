@@ -1,18 +1,19 @@
-﻿using Application.Common.Interfaces;
+using Application.Common.Interfaces;
 using Domain;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Domain.Entities;
 
 namespace Persistence
 {
     public class ClientControlContext : DbContext, IClientControlContext
     {
         public DbSet<Client> Clients { get; set; }
-        public DbSet<Domain.User> Users { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<ClientImportJobRecord> ClientImportJobRecords { get; set; }
 
         public ClientControlContext(DbContextOptions<ClientControlContext> options) : base(options) { }
 
