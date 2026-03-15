@@ -11,6 +11,7 @@ import { NAVIGATION_PATH } from "@/constants";
 import { createBrowserRouter, useLocation } from "react-router-dom";
 import SplashScreenLayout from "./layouts/SplashScreenLayout";
 import Page500 from "./pages/errors/Page500";
+import Page403 from "./pages/errors/Page403";
 import { cancelPendingRequests } from "./utils/axios";
 import { UserProfile } from "./types/api/enums/UserProfile";
 
@@ -32,7 +33,7 @@ export const routes = createBrowserRouter([
     
     {
         path: NAVIGATION_PATH.CLIENTS.ROOT,
-        element: <AuthGuard belongsTo={[UserProfile.Administrator]}><DashboardLayout /></AuthGuard>,
+        element: <AuthGuard belongsTo={[UserProfile.Administrator, UserProfile.Operator]}><DashboardLayout /></AuthGuard>,
         errorElement: <Page500 />,
         children: [
             { path: NAVIGATION_PATH.CLIENTS.LISTING.RELATIVE, Component: lazy(() => import("@/pages/clients/ClientListing")) },
@@ -56,6 +57,14 @@ export const routes = createBrowserRouter([
         errorElement: <Page500 />,
         children: [
             { path: NAVIGATION_PATH.AUTH.SIGN_IN.RELATIVE, Component: lazy(() => import("@/pages/auth/SignIn")) },
+        ],
+    },
+    {
+        path: "403",
+        element: <AuthLayout />,
+        errorElement: <Page500 />,
+        children: [
+            { path: "", Component: Page403 },
         ],
     },
     {

@@ -19,7 +19,7 @@ function AuthGuard({ children, belongsTo }: AuthGuardType) {
   if (belongsTo !== undefined && belongsTo.length > 0 && user?.profile !== undefined) {
     const authorized = belongsTo.some((role) => user.profile === role);
     if (!authorized) {
-      return <Navigate to={NAVIGATION_PATH.ERROR_PAGES.PAGE_500} />;
+      return <Navigate to={NAVIGATION_PATH.ERROR_PAGES.PAGE_403} />;
     }
   }
 

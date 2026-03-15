@@ -13,6 +13,7 @@ export const NAVIGATION_PATH = {
         },
     },
     ERROR_PAGES: {
+        PAGE_403: "/403",
         PAGE_404: "404",
         PAGE_500: "500",
     },
