@@ -45,6 +45,7 @@ export type TextFormFieldProps<T> =
   | AsyncSelectProps<T>
   | AsyncCreatableSelectProps<T>
   | DatePickerProps<T>
+  | DateInputProps<T>
   | CheckboxProps<T>
   | SelectGroupProps<T>;
 
@@ -85,6 +86,8 @@ export const TextFormField = <T extends any>({
         <ImageComponent {...props} />
       ) : props.componentType === TextFormFieldType.DATE_PICKER ? (
         <DatePickerComponent {...props} />
+      ) : props.componentType === TextFormFieldType.DATE_INPUT ? (
+        <DateInputComponent {...props} />
       ) : props.componentType === TextFormFieldType.SELECT_GROUP ? (
         <SelectGroupComponent {...props} />
       ) : null}
@@ -118,12 +121,13 @@ type BaseFormFieldProps<T = any> = {
 };
 
 type CheckboxProps<T = any> = Omit<FormControlProps, "value"> & BaseFormFieldProps<T> & { componentType: TextFormFieldType.CHECKBOX, value: boolean, switch?: boolean }
-type InputProps<T = any> = FormControlProps & BaseFormFieldProps<T> & { componentType: TextFormFieldType.INPUT, format?: (value: any) => any, money?: boolean, password?: boolean, textarea?: boolean, height?: number, mask?: string, disableAutoComplete?: boolean };
+type InputProps<T = any> = FormControlProps & BaseFormFieldProps<T> & { componentType: TextFormFieldType.INPUT, format?: (value: any) => any, money?: boolean, password?: boolean, textarea?: boolean, height?: number, mask?: string, disableAutoComplete?: boolean, numbersOnly?: boolean };
 type SelectProps<T = any> = ReactSelectProps & BaseFormFieldProps<T> & { componentType: TextFormFieldType.SELECT };
 type AsyncSelectProps<T = any> = AsyncProps<any, any, any> & BaseFormFieldProps<T> & { componentType: TextFormFieldType.SELECT_ASYNC, asyncLoad: (inputValue: string, signal?: AbortSignal) => Promise<Option[]>, fieldId?: string, date?: Date };
 type AsyncCreatableSelectProps<T = any> = AsyncCreatableProps<any, any, any> & BaseFormFieldProps<T> & { componentType: TextFormFieldType.SELECT_ASYNC_CREATABLE, asyncLoad: (inputValue?: string, signal?: AbortSignal) => Promise<Option[]>, fieldId?: string };
 type CreatableSelectProps<T = any> = CreatableProps<any, any, any> & BaseFormFieldProps<T> & { componentType: TextFormFieldType.SELECT_CREATABLE };
 type DatePickerProps<T = any> = DatePickerComponentProps & BaseFormFieldProps<T> & { componentType: TextFormFieldType.DATE_PICKER, value?: string, selectRange?: boolean, icon?: any, placeholder?: string };
+type DateInputProps<T = any> = BaseFormFieldProps<T> & { componentType: TextFormFieldType.DATE_INPUT, value?: string, min?: string, max?: string, calendarClassName?: string, placeholderText?: string };
 type ImageProps<T = any> = BaseFormFieldProps<T> & { componentType: TextFormFieldType.IMAGE, multiple?: boolean, accept?: HTMLInputElement["accept"], disabled?: boolean, value?: File | string };
 type SelectGroupProps<T = any> = ReactSelectProps & BaseFormFieldProps & { componentType: TextFormFieldType.SELECT_GROUP, options: { label: string, identifier: string, options: Option[] }[] }
 
@@ -323,6 +327,9 @@ const SelectCreatableComponent = ({ componentType, ...props }: CreatableSelectPr
   )
 }
 const SelectComponent = ({ componentType, ...props }: SelectProps) => {
+  const getOptionValue = (option: any) => props.getOptionValue ? props.getOptionValue(option) : (option as any).id;
+  const getOptionLabel = (option: any) => props.getOptionLabel ? props.getOptionLabel(option) : (option as any).name;
+
   return (
     <Select
       name={props.name}
@@ -331,22 +338,22 @@ const SelectComponent = ({ componentType, ...props }: SelectProps) => {
       isDisabled={props.disabled ?? props.isDisabled}
       className={`select2 ${!!props.formikError && "select2__error"}`}
       placeholder={props.placeholder ?? "Selecione..."}
-      getOptionValue={option => props.getOptionValue ? props.getOptionValue(option) : (option as any).id}
-      getOptionLabel={option => props.getOptionLabel ? props.getOptionLabel(option) : (option as any).name}
+      getOptionValue={getOptionValue}
+      getOptionLabel={getOptionLabel}
       isOptionDisabled={(option, selectValue) => !!props.isOptionDisabled ? props.isOptionDisabled(option, selectValue) : !((option as any)?.active ?? true)}
       closeMenuOnSelect={props.isMulti}
       filterOption={props.filterOption}
-      defaultValue={props.options?.find(option => (option as any).id == props.defaultValue)}
+      defaultValue={props.options?.find(option => getOptionValue(option) == props.defaultValue)}
       {...(props.value ? {
-        value: props.options?.find((item: any) => (item as any).id == props.value)
+        value: props.options?.find((item: any) => getOptionValue(item) == props.value)
       } : {})}
       isMulti={props.isMulti}
       isClearable={props.isClearable}
       noOptionsMessage={() => "Nenhum registro encontrado"}
       onChange={newValue => {
-        let event = { target: { name: props.name, value: (newValue as any)?.id } }
+        let event = { target: { name: props.name, value: getOptionValue(newValue as any) } }
         if (props.isMulti) {
-          event.target.value = (newValue as any).map((item: any) => item?.id)
+          event.target.value = (newValue as any).map((item: any) => getOptionValue(item))
         }
         if (props.handleChange) props.handleChange(event)
       }}
@@ -356,6 +363,10 @@ const SelectComponent = ({ componentType, ...props }: SelectProps) => {
 const InputComponent = ({ componentType, formikError, name: fieldName, ...props }: InputProps) => {
   const handleChange = (event: { target: { name: string, value: any } }) => {
     if (props.handleChange) {
+      if (props.numbersOnly) {
+        event.target.value = event.target.value.replace(/\D/g, "");
+      }
+
       if (props.mask) {
         event.target.value = event.target.value.replace(/[^0-9]/g, "");
         const maskers = (props.mask ?? "").replace(/[#]/g, "").split("");
@@ -577,6 +588,52 @@ const DatePickerComponent = ({ componentType, ...props }: DatePickerProps) => {
       locale={ptBR}
       calendarClassName="calendar-styles"
       clearButtonClassName={`datepicker-clear-btn`}
+    />
+  );
+};
+
+const DateInputComponent = ({ componentType, ...props }: DateInputProps) => {
+  const formatDate = (value?: string | null) => {
+    if (!value) return "";
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value;
+    }
+
+    const [day, month, year] = value.split("/");
+    if (!day || !month || !year) return "";
+
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  };
+
+  const parseDate = (value: string) => {
+    if (!value) return null;
+
+    const [year, month, day] = value.split("-");
+    if (!day || !month || !year) return null;
+
+    return `${day}/${month}/${year}`;
+  };
+
+  return (
+    <input
+      type="date"
+      name={props.name.toString()}
+      disabled={props.disabled}
+      placeholder={props.placeholderText}
+      className={`form-control ${props.calendarClassName ?? ""} ${!!props.formikError && "is-invalid"}`}
+      value={formatDate((props.value as string) ?? (props.defaultValue as string) ?? "")}
+      min={formatDate(props.min) || undefined}
+      max={formatDate(props.max) || undefined}
+      onChange={(e) => {
+        props.handleChange?.({
+          target: {
+            name: props.name,
+            value: e.target.value ? parseDate(e.target.value) : null,
+          },
+        });
+      }}
+      onBlur={props.handleBlur}
     />
   );
 };

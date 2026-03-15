@@ -5,7 +5,7 @@ import { Client } from "@/types/api/Client";
 import { ClientFilter } from "@/types/api/filters/ClientFilter";
 import DataTable from "@/components/DataTable";
 import { Link } from "react-router-dom";
-import { HiOutlinePencilAlt } from "react-icons/hi";
+import { HiOutlinePencilAlt, HiOutlineTrash } from "react-icons/hi";
 import { HiOutlineUpload } from "react-icons/hi";
 import Loader from "@/components/Loader";
 import ClientService from "@/services/ClientService";
@@ -19,12 +19,17 @@ import { ReactQueryKeys } from "@/constants/ReactQueryKeys";
 
 const ACCEPTED_CSV = ".csv";
 const MAX_FILE_SIZE_MB = 5;
+const DELETE_CONFIRM_TEXT = "deletar";
 
 const ClientListing = () => {
     const [date, setDate] = useState<Date>();
     const [showImportModal, setShowImportModal] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [importing, setImporting] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+    const [deleteConfirmText, setDeleteConfirmText] = useState("");
+    const [deleting, setDeleting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
 
@@ -82,6 +87,35 @@ const ClientListing = () => {
         }
     };
 
+    const openDeleteModal = (client: Client) => {
+        setClientToDelete(client);
+        setDeleteConfirmText("");
+        setShowDeleteModal(true);
+    };
+
+    const closeDeleteModal = () => {
+        if (!deleting) {
+            setShowDeleteModal(false);
+            setClientToDelete(null);
+            setDeleteConfirmText("");
+        }
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!clientToDelete?.id || deleteConfirmText.toLowerCase() !== DELETE_CONFIRM_TEXT) return;
+        setDeleting(true);
+        try {
+            await ClientService.delete(clientToDelete.id);
+            void toastr({ title: "Cliente excluído", text: "O cliente foi excluído com sucesso.", icon: "success" });
+            closeDeleteModal();
+            window.location.reload();
+        } catch (err) {
+            errorHandling(err);
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     return <>
         <Row style={{ justifyContent: "end", margin: "10px 0", gap: 8 }}>
             <Button
@@ -134,6 +168,42 @@ const ClientListing = () => {
                 </Form.Group>
             </Form>
         </CustomModal>
+
+        <CustomModal
+            show={showDeleteModal}
+            onHide={closeDeleteModal}
+            header={{ title: "Excluir cliente?", closeButton: true }}
+            footer={{
+                actions: [
+                    { label: "Cancelar", variant: "secondary", handler: closeDeleteModal, disabled: deleting },
+                    {
+                        label: deleting ? "Excluindo..." : "Excluir",
+                        variant: "danger",
+                        disabled: deleteConfirmText.toLowerCase() !== DELETE_CONFIRM_TEXT || deleting,
+                        handler: handleDeleteConfirm,
+                    },
+                ],
+            }}
+        >
+            <p className="mb-3">
+                Tem certeza que deseja excluir o cliente <strong>{clientToDelete ? `${clientToDelete.firstName} ${clientToDelete.lastName}` : ""}</strong>?
+                Esta ação não pode ser desfeita.
+            </p>
+            <Form.Group>
+                <Form.Label>Digite &quot;deletar&quot; para confirmar:</Form.Label>
+                <Form.Control
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    onPaste={(e) => e.preventDefault()}
+                    onCopy={(e) => e.preventDefault()}
+                    placeholder="deletar"
+                    disabled={deleting}
+                    autoComplete="off"
+                />
+            </Form.Group>
+        </CustomModal>
+
         <Card >
             <Card.Title></Card.Title>
             <Card.Header>
@@ -148,8 +218,16 @@ const ClientListing = () => {
                         { Header: "Nome", accessor: "firstName" },
                         { Header: "Sobrenome", accessor: "lastName" },
                         { Header: "Email", accessor: "email" },
-                        { Header: "Telefone", accessor: "phoneNumber" },
-                        { Header: "Documento", accessor: "documentNumber" },
+                        {
+                            Header: "Telefone",
+                            accessor: "phoneNumber",
+                            Cell: ({ value }) => format.toPhone(value),
+                        },
+                        {
+                            Header: "Documento",
+                            accessor: "documentNumber",
+                            Cell: ({ value }) => format.toDocument(value),
+                        },
                         {
                             Header: "Data de nascimento",
                             accessor: "birthDate",
@@ -158,18 +236,26 @@ const ClientListing = () => {
                         {
                             Header: "Ações",
                             id: "actions",
-                            Cell: ({ row }) => (
-                                row.original.id
-                                    ? (
+                            Cell: ({ row }) =>
+                                row.original.id ? (
+                                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                         <Link
                                             to={`${NAVIGATION_PATH.CLIENTS.EDIT.ABSOLUTE}/${row.original.id}`}
                                             title="editar"
                                         >
                                             <HiOutlinePencilAlt size={18} />
                                         </Link>
-                                    )
-                                    : null
-                            ),
+                                        <button
+                                            type="button"
+                                            className="btn btn-link p-0 text-danger"
+                                            title="excluir"
+                                            onClick={() => openDeleteModal(row.original)}
+                                            aria-label="Excluir cliente"
+                                        >
+                                            <HiOutlineTrash size={18} />
+                                        </button>
+                                    </span>
+                                ) : null,
                         },
                     ]}
                     query={async (filters) => {

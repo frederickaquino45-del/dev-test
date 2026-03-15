@@ -7,11 +7,13 @@ import { TextFormField } from "@/components/form/TextFormField/TextFormField";
 import Loader from "@/components/Loader";
 import { toastr } from "@/utils/toastr";
 import ClientService from "@/services/ClientService";
+import ViaCepService from "@/services/ViaCepService";
 import { handlePhoneNumberChange } from "@/helpers/handlePhoneNumberChange";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ReactQueryKeys } from "@/constants/ReactQueryKeys";
+import { BRAZIL_STATES } from "@/constants/BrazilStates";
 import yup from "@/utils/yup";
-import React, { Suspense } from "react";
+import React, { Suspense, useRef } from "react";
 import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import { Formik } from "formik";
 import { format } from "@/helpers/format";
@@ -51,22 +53,31 @@ const schemaValidation = yup.object().shape({
   }),
 });
 
+const normalizeClientForForm = (client?: Client): Client => ({
+  ...INITIAL_VALUES,
+  ...client,
+  birthDate: client?.birthDate ?? "",
+  phoneNumber: format.toPhone(client?.phoneNumber),
+  documentNumber: format.toDocument(client?.documentNumber),
+  address: {
+    ...INITIAL_VALUES.address,
+    ...client?.address,
+    postalCode: format.toPostalCode(client?.address?.postalCode),
+    state: client?.address?.state ?? "",
+  },
+});
+
 const ClientForm = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const lastPostalCodeRef = useRef<string>("");
 
   const { data } = useSuspenseQuery<Client>({
     queryKey: [ReactQueryKeys.CLIENT, id],
     meta: {
       fetchFn: async () => {
         const client = id ? await ClientService.getById(id) : { ...INITIAL_VALUES };
-        const normalized = {
-          ...INITIAL_VALUES,
-          ...client,
-          address: { ...INITIAL_VALUES.address, ...client?.address },
-          birthDate: client?.birthDate,
-        };
-        return normalized;
+        return normalizeClientForForm(client);
       },
     },
   });
@@ -77,11 +88,12 @@ const ClientForm = () => {
       const clientToSave: Client = {
         ...values,
         birthDate,
-        documentNumber: values.documentNumber.replace(/\D/g, ''),
-        phoneNumber: values.phoneNumber.replace(/\D/g, ''),
+        documentNumber: values.documentNumber.replace(/\D/g, ""),
+        phoneNumber: values.phoneNumber.replace(/\D/g, ""),
         address: {
           ...values.address,
-          postalCode: values.address.postalCode.replace(/\D/g, ''),
+          postalCode: values.address.postalCode.replace(/\D/g, ""),
+          state: values.address.state,
         },
       };
 
@@ -119,205 +131,236 @@ const ClientForm = () => {
                 handleSubmit,
                 handleChange,
                 handleBlur,
+                setFieldValue,
                 errors,
                 values,
                 isSubmitting,
                 isValid,
-              }) => (
-                <Form noValidate onSubmit={handleSubmit}>
-                  <Row>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="firstName"
-                        label="Nome"
-                        required
-                        placeholder="Nome"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={values.firstName}
-                        formikError={errors.firstName}
-                      />
-                    </Col>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="lastName"
-                        label="Sobrenome"
-                        required
-                        placeholder="Sobrenome"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={values.lastName}
-                        formikError={errors.lastName}
-                      />
-                    </Col>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="email"
-                        label="Email"
-                        required
-                        placeholder="Email"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={values.email}
-                        formikError={errors.email}
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="phoneNumber"
-                        label="Telefone"
-                        required
-                        placeholder="Telefone"
-                        handleBlur={handleBlur}
-                        handleChange={(evnt) => handlePhoneNumberChange(evnt, handleChange)}
-                        value={values.phoneNumber}
-                        formikError={errors.phoneNumber}
-                      />
-                    </Col>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="documentNumber"
-                        label="Documento"
-                        required
-                        placeholder="000.000.000-00"
-                        mask="###.###.###-##"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={values.documentNumber}
-                        formikError={errors.documentNumber}
-                      />
-                    </Col>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.DATE_PICKER}
-                        name="birthDate"
-                        label="Data de nascimento"
-                        required
-                        placeholderText="Data de nascimento"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={format.toBirthDateDisplay(values.birthDate)}
-                        formikError={errors.birthDate}
-                      />
-                    </Col>
-                  </Row>
-                  <br />
-                  <Row>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="address.postalCode"
-                        label="CEP"
-                        required
-                        placeholder="CEP"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={values.address.postalCode}
-                        formikError={errors.address?.postalCode}
-                      />
-                    </Col>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="address.addressLine"
-                        label="Endereço"
-                        required
-                        placeholder="Endereço"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={values.address.addressLine}
-                        formikError={errors.address?.addressLine}
-                      />
-                    </Col>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="address.number"
-                        label="Número"
-                        required
-                        placeholder="Número"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={values.address.number}
-                        formikError={errors.address?.number}
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="address.complement"
-                        label="Complemento"
-                        placeholder="Complemento"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={values.address.complement}
-                        formikError={errors.address?.complement}
-                      />
-                    </Col>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="address.neighborhood"
-                        label="Bairro"
-                        required
-                        placeholder="Bairro"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={values.address.neighborhood}
-                        formikError={errors.address?.neighborhood}
-                      />
-                    </Col>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="address.city"
-                        label="Cidade"
-                        required
-                        placeholder="Cidade"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={values.address.city}
-                        formikError={errors.address?.city}
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md={4}>
-                      <TextFormField
-                        componentType={TextFormFieldType.INPUT}
-                        name="address.state"
-                        label="Estado"
-                        required
-                        placeholder="Estado"
-                        handleBlur={handleBlur}
-                        handleChange={handleChange}
-                        value={values.address.state}
-                        formikError={errors.address?.state}
-                      />
-                    </Col>
-                  </Row>
-                  <br />
-                  <Button type="submit" variant="primary" disabled={!isValid || isSubmitting}>
-                    {isSubmitting ? "Salvando..." : "Salvar"}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    style={{ marginLeft: 5 }}
-                    onClick={() => navigate(NAVIGATION_PATH.CLIENTS.LISTING.ABSOLUTE)}
-                  >
-                    Voltar
-                  </Button>
-                </Form>
-              )}
+              }) => {
+                const handlePostalCodeChange = async (event: any) => {
+                  handleChange(event);
+
+                  const postalCode = event.target.value.replace(/\D/g, "");
+                  if (postalCode.length !== 8 || lastPostalCodeRef.current === postalCode) {
+                    return;
+                  }
+
+                  lastPostalCodeRef.current = postalCode;
+
+                  const address = await ViaCepService.getAddressByPostalCode(postalCode);
+                  if (!address) {
+                    return;
+                  }
+
+                  await setFieldValue("address.postalCode", format.toPostalCode(address.cep ?? postalCode));
+                  await setFieldValue("address.addressLine", address.logradouro ?? "");
+                  await setFieldValue("address.complement", address.complemento ?? values.address.complement);
+                  await setFieldValue("address.neighborhood", address.bairro ?? "");
+                  await setFieldValue("address.city", address.localidade ?? "");
+                  await setFieldValue("address.state", address.uf ?? "");
+                };
+
+                return (
+                  <Form noValidate onSubmit={handleSubmit}>
+                    <Row>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.INPUT}
+                          name="firstName"
+                          label="Nome"
+                          required
+                          placeholder="Nome"
+                          handleBlur={handleBlur}
+                          handleChange={handleChange}
+                          value={values.firstName}
+                          formikError={errors.firstName}
+                        />
+                      </Col>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.INPUT}
+                          name="lastName"
+                          label="Sobrenome"
+                          required
+                          placeholder="Sobrenome"
+                          handleBlur={handleBlur}
+                          handleChange={handleChange}
+                          value={values.lastName}
+                          formikError={errors.lastName}
+                        />
+                      </Col>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.INPUT}
+                          name="email"
+                          label="Email"
+                          required
+                          placeholder="Email"
+                          handleBlur={handleBlur}
+                          handleChange={handleChange}
+                          value={values.email}
+                          formikError={errors.email}
+                        />
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.INPUT}
+                          name="phoneNumber"
+                          label="Telefone"
+                          required
+                          placeholder="Telefone"
+                          handleBlur={handleBlur}
+                          handleChange={(event) => handlePhoneNumberChange(event, handleChange)}
+                          value={format.toPhone(values.phoneNumber)}
+                          formikError={errors.phoneNumber}
+                        />
+                      </Col>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.INPUT}
+                          name="documentNumber"
+                          label="Documento"
+                          required
+                          placeholder="000.000.000-00"
+                          mask="###.###.###-##"
+                          handleBlur={handleBlur}
+                          handleChange={handleChange}
+                          value={format.toDocument(values.documentNumber)}
+                          formikError={errors.documentNumber}
+                        />
+                      </Col>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.DATE_INPUT}
+                          name="birthDate"
+                          label="Data de nascimento"
+                          required
+                          placeholderText="Data de nascimento"
+                          handleBlur={handleBlur}
+                          handleChange={handleChange}
+                          value={format.toBirthDateDisplay(values.birthDate)}
+                          formikError={errors.birthDate}
+                        />
+                      </Col>
+                    </Row>
+                    <br />
+                    <Row>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.INPUT}
+                          name="address.postalCode"
+                          label="CEP"
+                          required
+                          placeholder="00000-000"
+                          mask="#####-###"
+                          handleBlur={handleBlur}
+                          handleChange={handlePostalCodeChange}
+                          value={format.toPostalCode(values.address.postalCode)}
+                          formikError={errors.address?.postalCode}
+                        />
+                      </Col>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.INPUT}
+                          name="address.addressLine"
+                          label="Endereço"
+                          required
+                          placeholder="Endereço"
+                          handleBlur={handleBlur}
+                          handleChange={handleChange}
+                          value={values.address.addressLine}
+                          formikError={errors.address?.addressLine}
+                        />
+                      </Col>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.INPUT}
+                          name="address.number"
+                          label="Número"
+                          required
+                          placeholder="Número"
+                          handleBlur={handleBlur}
+                          handleChange={handleChange}
+                          numbersOnly
+                          value={values.address.number}
+                          formikError={errors.address?.number}
+                        />
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.INPUT}
+                          name="address.complement"
+                          label="Complemento"
+                          placeholder="Complemento"
+                          handleBlur={handleBlur}
+                          handleChange={handleChange}
+                          value={values.address.complement}
+                          formikError={errors.address?.complement}
+                        />
+                      </Col>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.INPUT}
+                          name="address.neighborhood"
+                          label="Bairro"
+                          required
+                          placeholder="Bairro"
+                          handleBlur={handleBlur}
+                          handleChange={handleChange}
+                          value={values.address.neighborhood}
+                          formikError={errors.address?.neighborhood}
+                        />
+                      </Col>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.INPUT}
+                          name="address.city"
+                          label="Cidade"
+                          required
+                          placeholder="Cidade"
+                          handleBlur={handleBlur}
+                          handleChange={handleChange}
+                          value={values.address.city}
+                          formikError={errors.address?.city}
+                        />
+                      </Col>
+                    </Row>
+                    <Row>
+                      <Col md={4}>
+                        <TextFormField
+                          componentType={TextFormFieldType.SELECT}
+                          name="address.state"
+                          label="Estado"
+                          required
+                          placeholder="Selecione o estado"
+                          options={BRAZIL_STATES}
+                          getOptionLabel={(option) => (option as { label: string }).label}
+                          getOptionValue={(option) => (option as { value: string }).value}
+                          handleBlur={handleBlur}
+                          handleChange={handleChange}
+                          value={values.address.state}
+                          formikError={errors.address?.state}
+                        />
+                      </Col>
+                    </Row>
+                    <br />
+                    <Button type="submit" variant="primary" disabled={!isValid || isSubmitting}>
+                      {isSubmitting ? "Salvando..." : "Salvar"}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      style={{ marginLeft: 5 }}
+                      onClick={() => navigate(NAVIGATION_PATH.CLIENTS.LISTING.ABSOLUTE)}
+                    >
+                      Voltar
+                    </Button>
+                  </Form>
+                );
+              }}
             </Formik>
           </Card.Body>
         </Card>

@@ -1,5 +1,6 @@
 export enum TextFormFieldType {
     INPUT = "INPUT",
+    DATE_INPUT = "DATE_INPUT",
     SELECT_GROUP = "SELECT_GROUP",
     SELECT = "SELECT",
     SELECT_CREATABLE = "SELECT_CREATABLE",

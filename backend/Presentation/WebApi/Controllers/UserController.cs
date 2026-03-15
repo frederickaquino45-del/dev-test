@@ -1,4 +1,7 @@
-
+using Application.User.Commands.CreateUser;
+using Application.User.Commands.UpdateUser;
+using Application.User.Queries.AllUsersQuery;
+using Application.User.Queries.UserByIdQuery;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +23,7 @@ namespace WebApi.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Application.User.Commands.CreateUser.CreateUserCommandRequest request)
+        public async Task<IActionResult> Create([FromBody] CreateUserCommandRequest request)
         {
             var userId = await _mediator.Send(request);
             return CreatedAtAction(nameof(GetById), new { id = userId }, request);
@@ -28,17 +31,17 @@ namespace WebApi.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var users = await _mediator.Send(new Application.User.Queries.AllUsersQuery.AllUsersQueryRequest());
+            var users = await _mediator.Send(new AllUsersQueryRequest());
             return Ok(users);
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var user = await _mediator.Send(new Application.User.Queries.UserByIdQuery.UserByIdQueryRequest { Id = id });
+            var user = await _mediator.Send(new UserByIdQueryRequest { Id = id });
             return Ok(user);
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] Application.User.Commands.UpdateUser.UpdateUserCommandRequest request)
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateUserCommandRequest request)
         {
             if (id != request.Id)
             {

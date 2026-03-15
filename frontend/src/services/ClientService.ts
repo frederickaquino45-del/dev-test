@@ -14,16 +14,16 @@ class ClientService extends BaseService {
     return await this.get<Client[]>("", document ? { document } : undefined);
   }
 
-  async create(client: Client): Promise<string> {
-    return await this.post<Client, string>("", client);
+  async create<T = Client, TR = string>(data: T, signal?: AbortSignal): Promise<TR> {
+    return await this.post<T, TR>("", data, signal);
   }
 
-  async getById(id: string): Promise<Client> {
-    return await this.get<Client>(id);
+  async getById<T = Client>(id: string, signal?: AbortSignal): Promise<T> {
+    return await this.get<T>(id, undefined, signal);
   }
 
-  async update(id: string, client: Client): Promise<void> {
-    return await this.put<Client, void>(id, client);
+  async update<T = Client, TR = void>(id: string, data: T, signal?: AbortSignal): Promise<TR> {
+    return await this.put<T, TR>(id, data, signal);
   }
 
   async importCsv(file: File): Promise<ClientImportResponse> {

@@ -4,6 +4,31 @@ import moment from "moment";
 const intl = new Intl.NumberFormat();
 
 export const format = {
+    toDocument: (value: string | null | undefined): string => {
+        const digits = (value ?? "").replace(/\D/g, "");
+        if (!digits) return "";
+        if (digits.length <= 11) return format.toMask(digits.slice(0, 11), "###.###.###-##");
+        return format.toMask(digits.slice(0, 14), "##.###.###/####-##");
+    },
+    toPhone: (value: string | null | undefined): string => {
+        const digits = (value ?? "").replace(/\D/g, "");
+        if (!digits) return "";
+        if (digits.length > 10) {
+            return `(${digits.substring(0, 2)}) ${digits.substring(2, 3)} ${digits.substring(3, 7)}-${digits.substring(7, 11)}`.trim();
+        }
+        if (digits.length > 6) {
+            return `(${digits.substring(0, 2)}) ${digits.substring(2, 6)}-${digits.substring(6, 10)}`.trim();
+        }
+        if (digits.length > 2) {
+            return `(${digits.substring(0, 2)}) ${digits.substring(2)}`.trim();
+        }
+        return digits;
+    },
+    toPostalCode: (value: string | null | undefined): string => {
+        const digits = (value ?? "").replace(/\D/g, "");
+        if (!digits) return "";
+        return format.toMask(digits.slice(0, 8), "#####-###");
+    },
     toBirthDateDisplay: (value: string | null | undefined): string => {
         if (value == null || typeof value !== "string") return "";
         const trimmed = value.trim();

@@ -1,4 +1,5 @@
 using Application.Client.Commands.CreateClient;
+using Application.Client.Commands.DeleteClient;
 using Application.Client.Commands.ImportClients;
 using Application.Client.Commands.UpdateClient;
 using Application.Client.Queries.AllClientsQuery;
@@ -61,6 +62,14 @@ namespace WebApi.Controllers
             request.Id = id;
             var response = await _mediator.Send(request);
             return Ok(response);
+        }
+
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> Delete([FromRoute] Guid id)
+        {
+            await _mediator.Send(new DeleteClientCommandRequest { Id = id });
+            return NoContent();
         }
 
         [HttpPost("import")]
